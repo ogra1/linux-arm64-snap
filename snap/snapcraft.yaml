@@ -1,0 +1,70 @@
+name: linux-arm64
+adopt-info: kernel
+summary: The Ubuntu generic Linux kernel built for aarch64 with upstream defconfig.
+description: This Ubuntu generic Linux kernel built for the arm64 architecture
+    using the upstream defconfig
+grade: stable
+confinement: strict
+type: kernel
+
+architectures:
+  - build-on: amd64
+    run-on: arm64
+
+parts:
+  firmware:
+    plugin: nil
+    source: git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
+    source-depth: 1
+    override-build: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/firmware
+      cp -av ./* $SNAPCRAFT_PART_INSTALL/firmware/
+      # fix for nanopi-neo-air wlan
+      cp -av $SNAPCRAFT_PART_INSTALL/firmware/brcm/brcmfmac43430-sdio.AP6212.txt \
+        $SNAPCRAFT_PART_INSTALL/firmware/brcm/brcmfmac43430-sdio.txt
+      # cp -av ../../../fw-files/brcmfmac4356-sdio.txt $SNAPCRAFT_PART_INSTALL/firmware/brcm/
+      # NanoPC-T4 WIFI/BT firmware
+      svn export https://github.com/rockchip-linux/rkwifibt/trunk/firmware/broadcom/all/BT_FIRMWARE/BCM4356A2.hcd \
+        $SNAPCRAFT_PART_INSTALL/firmware/brcm/BCM4356A2.hcd
+      svn export https://github.com/rockchip-linux/rkwifibt/trunk/firmware/broadcom/all/WIFI_FIRMWARE/nvram_ap6356s.txt \
+        $SNAPCRAFT_PART_INSTALL/firmware/brcm/brcmfmac4356-sdio.txt
+      rm $SNAPCRAFT_PART_INSTALL/firmware/brcm/brcmfmac4356-sdio.bin
+      svn export https://github.com/rockchip-linux/rkwifibt/trunk/firmware/broadcom/all/WIFI_FIRMWARE/fw_bcm4356a2_ag.bin \
+        $SNAPCRAFT_PART_INSTALL/firmware/brcm/brcmfmac4356-sdio.bin
+    build-packages:
+      - subversion
+  kernel:
+    plugin: kernel
+    #source: git://kernel.ubuntu.com/ubuntu/ubuntu-bionic.git
+    source: git://kernel.ubuntu.com/ubuntu/ubuntu-disco.git
+    source-type: git
+    source-depth: 1
+    source-tag: Ubuntu-4.19.0-13.14
+    #source-tag: Ubuntu-4.15.0-45.48
+    kdefconfig: [defconfig, snappy/generic.config, snappy/security.config, snappy/systemd.config, snappy/snappy.config, snappy/containers.config]
+    kconfigs:
+      - CONFIG_LEDS_QCOM_LPG=n
+    override-pull: |
+      snapcraftctl pull
+      set -e
+      echo "applying snappy configs patches"
+      git apply -v ../../../patches/configs.patch
+      git apply -v ../../../patches/nanopi4-dts.patch
+      echo "setting version to $(git tag|sed 's/^Ubuntu-//')"
+      snapcraftctl set-version "$(git tag|sed 's/^Ubuntu-//')"
+    override-build: |
+      cp debian/scripts/retpoline-extract-one \
+        $SNAPCRAFT_PART_BUILD/scripts/ubuntu-retpoline-extract-one
+      snapcraftctl build
+      # we need an uncompressed image ...
+      NEWIMG="$(basename $(ls $SNAPCRAFT_PART_INSTALL/Image.gz-* |sed 's/\.gz//'))"
+      cp arch/arm64/boot/Image $SNAPCRAFT_PART_INSTALL/$NEWIMG
+      cp arch/arm64/boot/Image $SNAPCRAFT_PART_INSTALL/kernel.img
+      rm -rf $SNAPCRAFT_PART_INSTALL/Image.gz-*
+    kernel-with-firmware: false
+    build-packages:
+      - cpio
+      - libssl-dev
+      - on amd64 to arm64:
+        - gcc-aarch64-linux-gnu:amd64
+    after: [ firmware ]
