@@ -44,6 +44,12 @@ parts:
     kdefconfig: [defconfig, snappy/generic.config, snappy/security.config, snappy/systemd.config, snappy/snappy.config, snappy/containers.config]
     kconfigs:
       - CONFIG_LEDS_QCOM_LPG=n
+      - CONFIG_NETFILTER_XT_TARGET_CHECKSUM=y
+      - CONFIG_NETFILTER_XT_MATCH_COMMENT=y
+      - CONFIG_BPFILTER=y
+      - CONFIG_UNIX_DIAG=y
+      - CONFIG_PACKET_DIAG=y
+      - CONFIG_NETLINK_DIAG=y
     override-pull: |
       snapcraftctl pull
       set -e
