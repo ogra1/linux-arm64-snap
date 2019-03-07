@@ -447,7 +447,7 @@ index 0000000..d325e11
 +				regulator-boot-on;
 +				regulator-init-microvolt = <3000000>;
 +				regulator-min-microvolt = <1800000>;
-+				regulator-max-microvolt = <3300000>;
++				regulator-max-microvolt = <3000000>;
 +				regulator-name = "vcc_sdio";
 +
 +				regulator-state-mem {
