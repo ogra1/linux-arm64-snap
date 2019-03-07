@@ -50,6 +50,10 @@ parts:
       - CONFIG_UNIX_DIAG=y
       - CONFIG_PACKET_DIAG=y
       - CONFIG_NETLINK_DIAG=y
+      - CONFIG_PCIE_ROCKCHIP_HOST=y
+      - CONFIG_PHY_ROCKCHIP_PCIE=y
+      - CONFIG_NVME_CORE=y
+      - CONFIG_BLK_DEV_NVME=y
     override-pull: |
       snapcraftctl pull
       set -e
@@ -69,7 +73,9 @@ parts:
       rm -rf $SNAPCRAFT_PART_INSTALL/Image.gz-*
     kernel-with-firmware: false
     build-packages:
+      - bison
       - cpio
+      - flex
       - libssl-dev
       - on amd64 to arm64:
         - gcc-aarch64-linux-gnu:amd64
